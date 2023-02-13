@@ -16,7 +16,21 @@ class Wallet(object):
         # self.database = bdk.DatabaseConfig.SQLITE(
         #     bdk.SqliteDbConfiguration(os.path.join(os.getcwd(), "bdk-sqlite"))
         # )
+        self._create_blockchain()
         self.create_wallet()
+
+    def _create_blockchain(self) -> None:
+        blockchain_config = bdk.BlockchainConfig.ELECTRUM(
+            bdk.ElectrumConfig(
+                url="ssl://electrum.blockstream.info:60002",
+                socks5=None,
+                retry=5,
+                timeout=None,
+                stop_gap=100,
+                validate_domain=True,
+            )
+        )
+        self.blockchain = bdk.Blockchain(blockchain_config)
 
     def create_wallet(self) -> None:
         mnemonic = bdk.Mnemonic(bdk.WordCount.WORDS12)
@@ -54,3 +68,15 @@ class Wallet(object):
             self.network,
         )
         # Log.i(TAG, "Descriptor for change addresses is $internalDescriptor")
+
+    def get_last_unused_address(self) -> bdk.AddressInfo:
+        return self.bdk_wallet.get_address(bdk.AddressIndex.LAST_UNUSED)
+
+    def get_new_address(self) -> bdk.AddressInfo:
+        return self.bdk_wallet.get_address(bdk.AddressIndex.NEW)
+
+    def sync(self, log_progress=None) -> None:
+        self.bdk_wallet.sync(self.blockchain, log_progress)
+
+    def get_balance(self) -> bdk.Balance:
+        return self.bdk_wallet.get_balance()
