@@ -1,4 +1,3 @@
-import os
 import bdkpython as bdk
 
 
@@ -80,3 +79,21 @@ class Wallet(object):
 
     def get_balance(self) -> bdk.Balance:
         return self.bdk_wallet.get_balance()
+
+    def create_transaction(
+        self, recipient: str, amount: int, fee_rate: float
+    ) -> bdk.TxBuilderResult:
+        script_pubkey = bdk.Address(recipient).script_pubkey()
+        return (
+            bdk.TxBuilder()
+            .add_recipient(script_pubkey, amount)
+            .fee_rate(sat_per_vbyte=fee_rate)
+            .finish(self.bdk_wallet)
+        )
+
+    def sign(self, psbt: bdk.PartiallySignedTransaction) -> None:
+        self.bdk_wallet.sign(psbt)
+
+    def broadcast(self, signed_psbt: bdk.PartiallySignedTransaction) -> str:
+        self.blockchain.broadcast(signed_psbt)
+        return signed_psbt.txid()
