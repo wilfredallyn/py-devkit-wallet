@@ -29,13 +29,16 @@ if __name__ == "__main__":
     psbt, tx_details = tx_result.psbt, tx_result.transaction_details
     wallet.sign(psbt)
     txid = wallet.broadcast(psbt)
-    print(tx_details.__dict__)
+    # print(tx_details.__dict__)
 
     # should reflect new balance after send
     wallet.sync()
     print(wallet.get_balance())
 
     # get transaction history
+    tx_history = wallet.get_transaction_history()
+    for tx in tx_history:
+        print(tx, "\n")
 
     # display recovery phrase
 

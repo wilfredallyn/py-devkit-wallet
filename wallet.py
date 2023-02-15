@@ -1,4 +1,5 @@
 import bdkpython as bdk
+from datetime import datetime
 
 
 class Wallet(object):
@@ -97,3 +98,37 @@ class Wallet(object):
     def broadcast(self, signed_psbt: bdk.PartiallySignedTransaction) -> str:
         self.blockchain.broadcast(signed_psbt)
         return signed_psbt.txid()
+
+    def get_transaction_history(self):  # -> List<TransactionDetails>
+        # convert transactions to dict
+        tx_list = map(vars, self.bdk_wallet.list_transactions())
+
+        # get timestamp from confirmation_time, set to -1 if unconfirmed
+        tx_list = list(map(Wallet.parse_timestamp, tx_list))
+
+        # sort by ascending timestamp, convert details to string output
+        sorted_list = sorted(tx_list, key=lambda x: x["confirmation_time"])
+        tx_details = list(map(Wallet.parse_transaction_details, sorted_list))
+        return tx_details
+
+    @staticmethod
+    def parse_timestamp(tx: dict) -> dict:
+        if tx["confirmation_time"] is None:
+            tx["confirmation_time"] = -1
+        else:
+            tx["confirmation_time"] = tx["confirmation_time"].timestamp
+        return tx
+
+    @staticmethod
+    def parse_transaction_details(tx: dict) -> str:
+        lines = []
+        for k, v in tx.items():
+            if k == "confirmation_time":
+                if v == -1:
+                    lines.append(f"Confirmation Time: unconfirmed")
+                else:
+                    dt = datetime.fromtimestamp(v).strftime("%Y-%m-%d %H:%M:%S")
+                    lines.append(f"Confirmation Time: {dt}")
+            else:
+                lines.append(f"{k.capitalize().replace('_', ' ')}: {v}")
+        return "\n".join(lines)
