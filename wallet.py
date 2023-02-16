@@ -1,5 +1,6 @@
 import bdkpython as bdk
 from datetime import datetime
+from repository import Repository
 
 
 class Wallet(object):
@@ -10,7 +11,11 @@ class Wallet(object):
             cls._instance = super(Wallet, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self) -> None:
+    def __init__(self, repository: Repository = None) -> None:
+        if repository:
+            self.repository = repository
+        else:
+            self.repository = Repository(pkl_file="repository.pkl")
         self.network = bdk.Network.TESTNET
         self.database = bdk.DatabaseConfig.MEMORY()
         # self.database = bdk.DatabaseConfig.SQLITE(
@@ -48,6 +53,8 @@ class Wallet(object):
             network=self.network,
             database_config=self.database,
         )
+        self.repository.save_wallet(external_descriptor, internal_descriptor)
+        self.repository.save_mnemonic(mnemonic)
 
     def _create_external_descriptor(
         self, root_key: bdk.DescriptorSecretKey

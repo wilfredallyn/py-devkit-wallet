@@ -1,4 +1,5 @@
 import bdkpython as bdk
+from repository import Repository
 from wallet import Wallet
 
 
@@ -41,5 +42,6 @@ if __name__ == "__main__":
         print(tx, "\n")
 
     # display recovery phrase
+    print(wallet.repository.get_mnemonic())
 
     # enable wallet recovery
