@@ -8,7 +8,8 @@ if __name__ == "__main__":
     # https://thunderbiscuit.github.io/devkit-wallet/simple-wallet/
 
     # create wallet
-    wallet = Wallet()
+    pkl_file = "repository.pkl"
+    wallet = Wallet(pkl_file)
 
     # receive and sync
     receive_address = wallet.get_last_unused_address()
@@ -42,6 +43,9 @@ if __name__ == "__main__":
         print(tx, "\n")
 
     # display recovery phrase
-    print(wallet.repository.get_mnemonic())
+    print(wallet.get_mnemonic())
 
     # enable wallet recovery
+    wallet.persist()
+    wallet_2 = Wallet(pkl_file)
+    print(wallet_2.get_mnemonic())

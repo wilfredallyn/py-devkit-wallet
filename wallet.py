@@ -1,5 +1,6 @@
 import bdkpython as bdk
 from datetime import datetime
+import os
 from repository import Repository
 
 
@@ -11,18 +12,23 @@ class Wallet(object):
             cls._instance = super(Wallet, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, repository: Repository = None) -> None:
-        if repository:
-            self.repository = repository
-        else:
-            self.repository = Repository(pkl_file="repository.pkl")
+    def __init__(self, pkl_file: str = None) -> None:
         self.network = bdk.Network.TESTNET
         self.database = bdk.DatabaseConfig.MEMORY()
         # self.database = bdk.DatabaseConfig.SQLITE(
         #     bdk.SqliteDbConfiguration(os.path.join(os.getcwd(), "bdk-sqlite"))
         # )
+
+        if pkl_file and os.path.isfile(pkl_file):
+            self.repository = Repository.load(pkl_file)
+            self._recover_wallet(self.repository.get_mnemonic())
+        else:
+            self.repository = Repository(pkl_file)
+            self._create_new_wallet()
         self._create_blockchain()
-        self.create_wallet()
+
+    def persist(self) -> None:
+        self.repository.persist()
 
     def _create_blockchain(self) -> None:
         blockchain_config = bdk.BlockchainConfig.ELECTRUM(
@@ -37,8 +43,15 @@ class Wallet(object):
         )
         self.blockchain = bdk.Blockchain(blockchain_config)
 
-    def create_wallet(self) -> None:
+    def _create_new_wallet(self) -> None:
         mnemonic = bdk.Mnemonic(bdk.WordCount.WORDS12)
+        self._initialize_wallet(mnemonic)
+
+    def _recover_wallet(self, mnemonic_str: str) -> None:
+        mnemonic = bdk.Mnemonic.from_string(mnemonic_str)
+        self._initialize_wallet(mnemonic)
+
+    def _initialize_wallet(self, mnemonic: bdk.Mnemonic) -> None:
         bip32_root_key = bdk.DescriptorSecretKey(
             network=self.network,
             mnemonic=mnemonic,
@@ -75,6 +88,9 @@ class Wallet(object):
             self.network,
         )
         # Log.i(TAG, "Descriptor for change addresses is $internalDescriptor")
+
+    def get_mnemonic(self) -> str:
+        return self.repository.get_mnemonic()
 
     def get_last_unused_address(self) -> bdk.AddressInfo:
         return self.bdk_wallet.get_address(bdk.AddressIndex.LAST_UNUSED)

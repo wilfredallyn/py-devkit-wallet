@@ -1,3 +1,4 @@
+import bdkpython as bdk
 import pickle
 from typing import Type
 
@@ -18,14 +19,26 @@ class Repository(object):
             self.data = {}
         self.pkl_file = pkl_file
 
-    def save_wallet(self, external_descriptor: str, internal_descriptor: str) -> None:
+    def persist(self) -> None:
+        with open(self.pkl_file, "wb") as f:
+            pickle.dump(self.data, f)
+
+    @staticmethod
+    def load(pkl_file) -> Type["Repository"]:
+        with open(pkl_file, "rb") as f:
+            data = pickle.load(f)
+        return Repository(pkl_file=pkl_file, data=data)
+
+    def save_wallet(
+        self, external_descriptor: bdk.Descriptor, internal_descriptor: bdk.Descriptor
+    ) -> None:
         # Log.i(
         #     TAG,
         #     "Saved wallet:\npath -> $path \ndescriptor -> $descriptor \nchange descriptor -> $changeDescriptor"
         # )
         self.data["wallet_initialized"] = True
-        self.data["external_descriptor"] = external_descriptor
-        self.data["internal_descriptor"] = internal_descriptor
+        self.data["external_descriptor"] = external_descriptor.as_string()
+        self.data["internal_descriptor"] = internal_descriptor.as_string()
 
     def save_mnemonic(self, mnemonic: str) -> None:
         # Log.i(TAG, "The recovery phrase is: $mnemonic")
