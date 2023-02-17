@@ -1,5 +1,6 @@
 import bdkpython as bdk
 from datetime import datetime
+from logger import setup_logger
 import os
 from repository import Repository
 
@@ -13,6 +14,7 @@ class Wallet(object):
         return cls._instance
 
     def __init__(self, pkl_file: str = None) -> None:
+        self.logger = setup_logger()
         self.network = bdk.Network.TESTNET
         self.database = bdk.DatabaseConfig.MEMORY()
         # self.database = bdk.DatabaseConfig.SQLITE(
@@ -20,14 +22,17 @@ class Wallet(object):
         # )
 
         if pkl_file and os.path.isfile(pkl_file):
+            self.logger.info(f"Loading wallet from {pkl_file}\n")
             self.repository = Repository.load(pkl_file)
             self._recover_wallet(self.repository.get_mnemonic())
         else:
+            self.logger.info(f"Creating new wallet at {pkl_file}\n")
             self.repository = Repository(pkl_file)
             self._create_new_wallet()
         self._create_blockchain()
 
     def persist(self) -> None:
+        self.logger.info(f"Saving wallet at {self.repository.pkl_file}\n")
         self.repository.persist()
 
     def _create_blockchain(self) -> None:
@@ -73,21 +78,23 @@ class Wallet(object):
         self, root_key: bdk.DescriptorSecretKey
     ) -> bdk.Descriptor:
         external_path = bdk.DerivationPath("m/84h/1h/0h/0")
-        return bdk.Descriptor(
+        external_descriptor = bdk.Descriptor(
             f"wpkh({root_key.extend(external_path).as_string()})",
             self.network,
         )
-        # Log.i(TAG, "Descriptor for receive addresses is $externalDescriptor")
+        self.logger.info(f"External descriptor is {external_descriptor.as_string()}\n")
+        return external_descriptor
 
     def _create_internal_descriptor(
         self, root_key: bdk.DescriptorSecretKey
     ) -> bdk.Descriptor:
         internal_path = bdk.DerivationPath("m/84h/1h/0h/1")
-        return bdk.Descriptor(
+        internal_descriptor = bdk.Descriptor(
             f"wpkh({root_key.extend(internal_path).as_string()})",
             self.network,
         )
-        # Log.i(TAG, "Descriptor for change addresses is $internalDescriptor")
+        self.logger.info(f"Internal descriptor is {internal_descriptor.as_string()}\n")
+        return internal_descriptor
 
     def get_mnemonic(self) -> str:
         return self.repository.get_mnemonic()

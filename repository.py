@@ -12,7 +12,6 @@ class Repository(object):
         return cls._instance
 
     def __init__(self, pkl_file, data=None) -> None:
-        # log pkl_file path
         if data:
             self.data = data
         else:
@@ -32,16 +31,11 @@ class Repository(object):
     def save_wallet(
         self, external_descriptor: bdk.Descriptor, internal_descriptor: bdk.Descriptor
     ) -> None:
-        # Log.i(
-        #     TAG,
-        #     "Saved wallet:\npath -> $path \ndescriptor -> $descriptor \nchange descriptor -> $changeDescriptor"
-        # )
         self.data["wallet_initialized"] = True
         self.data["external_descriptor"] = external_descriptor.as_string()
         self.data["internal_descriptor"] = internal_descriptor.as_string()
 
     def save_mnemonic(self, mnemonic: str) -> None:
-        # Log.i(TAG, "The recovery phrase is: $mnemonic")
         self.data["mnemonic"] = mnemonic.as_string()
 
     def get_mnemonic(self) -> str:
